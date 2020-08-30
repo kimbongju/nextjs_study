@@ -1,5 +1,5 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit";
-import { Fruit } from '../pages/fruit-store/index';
+import { Fruit } from '../pages/fruit-store/list';
 
 interface initialStateType {
     fruits: Fruit[],
