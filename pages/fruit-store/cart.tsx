@@ -22,11 +22,11 @@ function Cart() {
         })
 
         switch (filter) {
-            case Filter.Normal:
+            case Filter.normal:
                 return cartList.filter(fruit => !fruit.isPrime);
-            case Filter.PRIME:
+            case Filter.prime:
                 return cartList.filter(fruit => fruit.isPrime);
-            case Filter.All:
+            case Filter.all:
             default:
                 return cartList;
         }
@@ -64,9 +64,9 @@ function Cart() {
                                 }
                             </ListBlock>
                             <AmountBlock>
-                                <PriceWrapper>prime 과일 : {filterPrice(Filter.PRIME)} 원</PriceWrapper>
-                                <PriceWrapper>일반 과일 : {filterPrice(Filter.Normal)} 원</PriceWrapper>
-                                <PriceWrapper>총 상품 금액 : {filterPrice(Filter.All)}</PriceWrapper>
+                                <PriceWrapper>prime 과일 : {filterPrice(Filter.prime)} 원</PriceWrapper>
+                                <PriceWrapper>일반 과일 : {filterPrice(Filter.normal)} 원</PriceWrapper>
+                                <PriceWrapper>총 상품 금액 : {filterPrice(Filter.all)}</PriceWrapper>
                                 <PurchaseButton
                                     onClick={() => dispatch(fruitActions.resetCart())}
                                 >결제하기</PurchaseButton>

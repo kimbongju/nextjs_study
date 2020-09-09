@@ -1,5 +1,5 @@
 import Layout from '../../components/fruit-store/Layout'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
 import styled from '@emotion/styled'
@@ -9,6 +9,9 @@ import { RootState } from '../../store/rootReducer';
 import { fruitActions } from '../../store/fruitReducer';
 
 import FruitCard, { CardType } from '../../components/fruit-store/FruitCard';
+
+import { useRouter } from 'next/router';
+import fetch from 'node-fetch';
 
 export interface Fruit {
     id: number,
@@ -20,22 +23,43 @@ export interface Fruit {
 }
 
 export enum Filter {
-    All,
-    Normal,
-    'PRIME'
+    all,
+    normal,
+    prime,
 }
 
-function List() {
-    // useState 값 enum은 초기화를 하지 않을때만 대입해주면 된다(대입하는 시점에서 타입을 알수 있기 때문에)
-    const [filterType, setFilterType] = useState(Filter.All);
-    const { fruits } = useSelector((state: RootState) => state.fruit);
+export async function getServerSideProps() {
+    const response = await fetch('http://localhost:3000/data/fruit.json');
+    const fruitList = await response.json();
+    return {
+        props: {
+            fruitList
+        }, // will be passed to the page component as props
+    }
+}
 
+function List({ fruitList }) {
+    const router = useRouter();
+
+    // router가 변경됨을 감지해서 filter를 set 한다
+    const getFilterQuery = useEffect(() => {
+        const filterParam = router.query.filter;
+        if (typeof filterParam === 'string') {
+            setFilterType(Filter[filterParam]);
+        } else {
+            setFilterType(Filter.all);
+        }
+    }, [router]);
+
+    // useState 값 enum은 초기화를 하지 않을때만 대입해주면 된다(대입하는 시점에서 타입을 알수 있기 때문에)
+    const [filterType, setFilterType] = useState<Filter>(Filter.all);
+    const { fruits } = useSelector((state: RootState) => state.fruit);
     const dispatch = useDispatch();
 
     useEffect(() => {
         async function loadFruitList() {
-            const response = await fetch('/data/fruit.json');
-            const fruitList = await response.json();
+            // const response = await fetch('/data/fruit.json');
+            // const fruitList = await response.json();
             dispatch(fruitActions.setList(fruitList));
         }
         loadFruitList();
@@ -44,18 +68,18 @@ function List() {
     // TODO: 공통으로 쓸수 있도록 변경하면 좋을듯...
     const filterList = () => {
         switch (filterType) {
-            case Filter.Normal:
+            case Filter.normal:
                 return fruits.filter(fruit => !fruit.isPrime);
-            case Filter.PRIME:
+            case Filter.prime:
                 return fruits.filter(fruit => fruit.isPrime);
-            case Filter.All:
+            case Filter.all:
             default:
                 return fruits;
         }
     };
 
     const handleClickFilter = (paramFilterType: Filter) => {
-        setFilterType(paramFilterType);
+        router.push(`/fruit-store/list?filter=${Filter[paramFilterType]}`);
     }
 
     const isActive = (paramFilterType: Filter) => {
@@ -66,16 +90,16 @@ function List() {
         <Layout>
             <FilterBlock>
                 <FilterButton
-                    onClick={() => handleClickFilter(Filter.All)}
-                    active={isActive(Filter.All)}
+                    onClick={() => handleClickFilter(Filter.all)}
+                    active={isActive(Filter.all)}
                 >전체</FilterButton>
                 <FilterButton
-                    onClick={() => handleClickFilter(Filter.Normal)}
-                    active={isActive(Filter.Normal)}
+                    onClick={() => handleClickFilter(Filter.normal)}
+                    active={isActive(Filter.normal)}
                 >일반 과일</FilterButton>
                 <FilterButton
-                    onClick={() => handleClickFilter(Filter.PRIME)}
-                    active={isActive(Filter.PRIME)}
+                    onClick={() => handleClickFilter(Filter.prime)}
+                    active={isActive(Filter.prime)}
                 >Prime 과일</FilterButton>
             </FilterBlock>
             <MenuBlock>
