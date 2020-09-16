@@ -12,6 +12,7 @@ import FruitCard, { CardType } from '../../components/fruit-store/FruitCard';
 
 import { useRouter } from 'next/router';
 import fetch from 'node-fetch';
+import { GetServerSideProps } from 'next';
 
 export interface Fruit {
     id: number,
@@ -23,14 +24,36 @@ export interface Fruit {
 }
 
 export enum Filter {
-    all,
-    normal,
-    prime,
+    all = 'all',
+    normal = 'normal',
+    prime = 'prime',
 }
 
-export async function getServerSideProps() {
+export interface ListProps {
+    fruitList: Fruit[];
+}
+
+export type Query = {
+    filter?: Filter;
+}
+
+const filterList = (list, filterType) => {
+    switch (filterType) {
+        case Filter.normal:
+            return list.filter(item => !item.isPrime);
+        case Filter.prime:
+            return list.filter(item => item.isPrime);
+        case Filter.all:
+        default:
+            return list;
+    }
+};
+
+export const getServerSideProps: GetServerSideProps<ListProps, Query> = async (context) => {
     const response = await fetch('http://localhost:3000/data/fruit.json');
-    const fruitList = await response.json();
+    const filter = context.query.filter || Filter.normal;
+    const fruitList = filterList(await response.json(), filter);
+
     return {
         props: {
             fruitList
@@ -38,11 +61,15 @@ export async function getServerSideProps() {
     }
 }
 
-function List({ fruitList }) {
+function List({ fruitList }) {// TODO: 타입 추가하기
+    // useState 값 enum은 초기화를 하지 않을때만 대입해주면 된다(대입하는 시점에서 타입을 알수 있기 때문에)
+    const [filterType, setFilterType] = useState<Filter>(Filter.all);
+    const { fruits } = useSelector((state: RootState) => state.fruit);
+    const dispatch = useDispatch();
     const router = useRouter();
 
     // router가 변경됨을 감지해서 filter를 set 한다
-    const getFilterQuery = useEffect(() => {
+    useEffect(() => {
         const filterParam = router.query.filter;
         if (typeof filterParam === 'string') {
             setFilterType(Filter[filterParam]);
@@ -51,32 +78,12 @@ function List({ fruitList }) {
         }
     }, [router]);
 
-    // useState 값 enum은 초기화를 하지 않을때만 대입해주면 된다(대입하는 시점에서 타입을 알수 있기 때문에)
-    const [filterType, setFilterType] = useState<Filter>(Filter.all);
-    const { fruits } = useSelector((state: RootState) => state.fruit);
-    const dispatch = useDispatch();
-
     useEffect(() => {
         async function loadFruitList() {
-            // const response = await fetch('/data/fruit.json');
-            // const fruitList = await response.json();
             dispatch(fruitActions.setList(fruitList));
         }
         loadFruitList();
     }, []);
-
-    // TODO: 공통으로 쓸수 있도록 변경하면 좋을듯...
-    const filterList = () => {
-        switch (filterType) {
-            case Filter.normal:
-                return fruits.filter(fruit => !fruit.isPrime);
-            case Filter.prime:
-                return fruits.filter(fruit => fruit.isPrime);
-            case Filter.all:
-            default:
-                return fruits;
-        }
-    };
 
     const handleClickFilter = (paramFilterType: Filter) => {
         router.push(`/fruit-store/list?filter=${Filter[paramFilterType]}`);
@@ -105,7 +112,7 @@ function List({ fruitList }) {
             <MenuBlock>
                 <ListBlock>
                     {
-                        filterList().map((fruit, fruitIndex) => {
+                        fruitList.map((fruit, fruitIndex) => {
                             return <FruitCard
                                 key={fruitIndex}
                                 {...fruit}
