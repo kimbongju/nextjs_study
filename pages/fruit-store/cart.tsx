@@ -47,14 +47,14 @@ function Cart() {
         <Layout>
             <CartBlock>
                 {
-                    cartList(Filter.All).length === 0 ?
+                    cartList(Filter.all).length === 0 ?
                         <EmptyBlock>
                             담긴 상품이 없어요 <span role="img" aria-label="oops">😵</span>
                         </EmptyBlock> :
                         <>
                             <ListBlock>
                                 {
-                                    cartList(Filter.All).map((fruit, fruitIndex) => {
+                                    cartList(Filter.all).map((fruit, fruitIndex) => {
                                         return <FruitCard
                                             key={fruitIndex}
                                             {...fruit}
